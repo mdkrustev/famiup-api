@@ -1,20 +1,31 @@
 // src/utils/responses.ts
+import { env } from "cloudflare:workers";
 
-export const Ok = (body: string | any = "OK") => {
+const corsHeader = {
+  "Content-Type": "application/json",
+  "Access-Control-Allow-Origin": env.CLIENT_URI,
+  "Access-Control-Allow-Credentials": "true",
+}
+
+export const Ok = (body: string | any = "OK", headers = {}) => {
+
   const isObject = typeof body === "object" && body !== null;
   if (isObject) {
     return new Response(JSON.stringify(body), {
       status: 200,
       headers: {
+        ...corsHeader,
+        ...headers,
         "Content-Type": "application/json",
       },
     });
   }
-
   return new Response(String(body), {
     status: 200,
     headers: {
-      "Content-Type": "text/plain",
+      ...corsHeader,
+      ...headers,
+      "Content-Type": "text/html",
     },
   });
 };

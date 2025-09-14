@@ -9,10 +9,12 @@
 		"cf-typegen": "wrangler types"
 	},
 	"devDependencies": {
+		"@cloudflare/workers-types": "^4.20250719.0",
 		"typescript": "^5.5.2",
 		"wrangler": "^4.25.0"
 	},
 	"dependencies": {
-		"@neondatabase/serverless": "^1.0.1"
+		"@neondatabase/serverless": "^1.0.1",
+		"jose": "^6.0.12"
 	}
 }

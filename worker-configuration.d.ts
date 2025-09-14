@@ -4,6 +4,13 @@
 declare namespace Cloudflare {
 	interface Env {
 		MY_DURABLE_OBJECT: DurableObjectNamespace<import("./src/index").MyDurableObject>;
+        DATABASE_URL: string,
+        GOOGLE_CLIENT_ID: string,
+        REDIRECT_URI: string,
+        GOOGLE_CLIENT_SECRET: string,
+        API_URI: string,
+        CLIENT_URI: string
+        JWT_SECRET: string
 	}
 }
 interface Env extends Cloudflare.Env {}

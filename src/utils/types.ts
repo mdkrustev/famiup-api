@@ -1,7 +1,10 @@
+import { PostgresDB } from "./db";
+
 export type RouteContext = {
     request: Request;
     env: Env;
     ctx: ExecutionContext;
+    db: PostgresDB
 };
 
 export type RouteHandler = (context: RouteContext) => Promise<Response>;

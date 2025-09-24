@@ -10,6 +10,9 @@ const getOAuthToken = "https://oauth2.googleapis.com/token"
 const getGoogleInfo = "https://www.googleapis.com/oauth2/v3/tokeninfo"
 
 export const loginGoogle = async (context: RouteContext) => {
+
+    const loginRoomId = context.queryParam('loginRoomId');
+
     // 1. Redirect to Google OAuth
     const googleAuthUrl = new URL(googleOAuth2);
     googleAuthUrl.searchParams.set("client_id", context.env.GOOGLE_CLIENT_ID);
@@ -18,6 +21,7 @@ export const loginGoogle = async (context: RouteContext) => {
     googleAuthUrl.searchParams.set("scope", "openid email profile");
     googleAuthUrl.searchParams.set("access_type", "offline");
     googleAuthUrl.searchParams.set("prompt", "consent");
+    googleAuthUrl.searchParams.set("state", loginRoomId);
     console.log("Redirect URL:", googleAuthUrl.toString());
     return Redirect(googleAuthUrl.toString())
 };
@@ -25,9 +29,10 @@ export const loginGoogle = async (context: RouteContext) => {
 export const googleAuthCallback = async (context: RouteContext) => {
 
     // 2. Handle OAuth callback
-    const url = new URL(context.request.url);
-    const code = url.searchParams.get("code");
+    const code = context.queryParam("code");
+    const loginRoomId = context.queryParam('state');
     if (!code) return BadRequest("Missing code");
+    if (!loginRoomId) return BadRequest("Missing state");
 
     // Exchange code for tokens
     const tokenResponse = await fetch(getOAuthToken, {
@@ -53,13 +58,19 @@ export const googleAuthCallback = async (context: RouteContext) => {
             }),
         });
         const userInfo: any = await userInfoResponse.json();
-        await context.db.insertOrUpdate('users', { name: `${userInfo.given_name} ${userInfo.family_name}`, google_id: userInfo.sub, email: userInfo.email }, 'email')
-        const user = await context.db.first<IUser>('SELECT * FROM users WHERE email = $1', [userInfo.email])
+        const user = await context.db.insertOrUpdate<IUser>('users', {
+            name: `${userInfo.given_name} ${userInfo.family_name}`,
+            google_id: userInfo.sub,
+            email: userInfo.email,
+            parent_id: null,
+            loginroom_id: loginRoomId
+        }, 'email')
+
         if (user) {
             const token = await generateToken({ id: user.id });
             const cookie = createSessionCookie(token, 3600 * 24 * 7);
             const html = LOGIN_POPUP_HTML;
-            await sendSocketMessage("loginroom", "login", user);
+            await sendSocketMessage(loginRoomId, "login", user);
             return new Response(html, {
                 status: 200,
                 headers: {
@@ -70,6 +81,11 @@ export const googleAuthCallback = async (context: RouteContext) => {
         }
     }
     return Ok('')
+}
+
+export const AuthCheckLoginHandler = async(context: RouteContext) => {
+    //context.user
+    return Ok({isAuth: context.user ? true : false, checkReady: true, loggedUsed: context.user})
 }
 
 const LOGIN_POPUP_HTML = `<!DOCTYPE html>

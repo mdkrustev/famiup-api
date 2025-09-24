@@ -11,9 +11,12 @@ export class MyDurableObject extends DurableObject<Env> {
   // Map на стая -> Set от WebSocket връзки
   rooms: Map<string, Set<WebSocket>>;
 
+
+
   constructor(ctx: DurableObjectState, env: Env) {
     super(ctx, env);
     this.rooms = new Map();
+
   }
 
   async fetch(request: Request): Promise<Response> {
@@ -35,9 +38,14 @@ export class MyDurableObject extends DurableObject<Env> {
 
       // Получаване и препращане на съобщения
       server.addEventListener("message", (event) => {
+
         for (const conn of connections!) {
           if (conn !== server) {
-            try { conn.send(event.data); } catch { connections!.delete(conn); }
+            try {
+              console.log('room', room, event.data)
+              conn.send(event.data);
+
+            } catch { connections!.delete(conn); }
           }
         }
       });
@@ -57,11 +65,12 @@ export class MyDurableObject extends DurableObject<Env> {
         const data: any = await request.json();
         const msg = data.message || "";
 
-
         const connections = this.rooms.get(room);
         if (connections) {
           for (const conn of connections) {
-            try { conn.send(msg); } catch { connections.delete(conn); }
+            try {
+              conn.send(msg);
+            } catch { connections.delete(conn); }
           }
         }
 
@@ -76,11 +85,9 @@ export class MyDurableObject extends DurableObject<Env> {
 
     return new Response("Method not allowed", { status: 405 });
   }
+
+
 }
-
-
-
-
 
 function matchRoute(routes: Route[], request: Request): RouteHandler | null {
 
@@ -115,6 +122,7 @@ export default {
           "Access-Control-Allow-Credentials": "true",
           "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, OPTIONS",
           "Access-Control-Allow-Headers": "Content-Type, Authorization",
+          "Access-Control-Max-Age": "86400"
         },
       });
     }
@@ -128,8 +136,10 @@ export default {
     db.connect(env.DATABASE_URL)
     const handler = matchRoute(routes, request);
     if (handler) {
-      //await migration(db)
-      return handler({ request, env, ctx, db });
+      const queryParam = (param: string) => {
+        return url.searchParams.get(param);
+      }
+      return handler({ request, env, ctx, db, user: null, queryParam });
     }
     return NotFound()
   },

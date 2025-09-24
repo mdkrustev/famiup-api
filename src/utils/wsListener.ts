@@ -1,9 +1,9 @@
 import { env } from "cloudflare:workers";
+import { Guid } from "./types";
 
-type roomTypes = 'loginroom';
-type actionTypes = 'login' | 'logout'
+type actionTypes = 'login' | 'logout' | any
 
-export const sendSocketMessage = async (room: roomTypes, action: actionTypes, message: any) => {
+export const sendSocketMessage = async (room: string | null, action: actionTypes, message: any) => {
     const roomId = env.MY_DURABLE_OBJECT.idFromName('loginroom')
     const roomObj = env.MY_DURABLE_OBJECT.get(roomId);
     await roomObj.fetch(`${env.API_URI}/api/ws/${room}`, {

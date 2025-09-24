@@ -172,3 +172,4 @@ dist
 .wrangler/
 wrangler.toml
 arch.txt
+.DS_Store

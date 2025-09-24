@@ -31,5 +31,5 @@ async function getUserIdFromToken(token: string | null, secretString: string) {
 }
 
 export const createSessionCookie = (token: string, maxAge: number): string => {
-    return `session=${token}; HttpOnly; Secure; Path=/; SameSite=Lax; Max-Age=${maxAge}`;
+    return `session=${token}; HttpOnly; Secure; Path=/; SameSite=None; Max-Age=${maxAge}`;
 }
